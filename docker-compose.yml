@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  recommendation_service:
+    build:
+      context: ./recommendation_service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    networks:
+      - recommendation_network
+
+  features_service:
+    build:
+      context: ./features_service
+    ports:
+      - "8010:8010"
+    volumes:
+      - ./data:/app/data
+    networks:
+      - recommendation_network
+
+  events_service:
+    build:
+      context: ./events_service
+    ports:
+      - "8020:8020"
+    networks:
+      - recommendation_network
+
+  streamlit_app:
+    build:
+      context: ./streamlit_app
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+    networks:
+      - recommendation_network
+    depends_on:
+      - recommendation_service
+      - features_service
+      - events_service
+
+networks:
+  recommendation_network:
+    driver: bridge

@@ -1,3 +1,4 @@
+import os
 import logging
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
@@ -7,8 +8,12 @@ import requests
 # Настройка логирования
 logger = logging.getLogger("uvicorn.error")
 
-features_store_url = "http://127.0.0.1:8010"
-events_store_url = "http://127.0.0.1:8020"
+# Обновленные URL-адреса для Docker
+features_store_url = "http://features_service:8010"
+events_store_url = "http://events_service:8020"
+
+# Путь к файлам .parquet
+base_path = "/app/data"
 
 class Recommendations:
     def __init__(self):
@@ -154,9 +159,9 @@ async def recommendations(user_id: int, k: int = 100):
         logger.error(f"Failed to fetch events for user {user_id}: {resp.status_code}")
     events = resp.json()
     events = events.get("events", [])
-    
     # Удаляем уже проигранные треки
     recs_blended = [item for item in recs_blended if item not in events]
+
     # Оставляем только первые k рекомендаций
     recs_blended = recs_blended[:k]
 
@@ -167,11 +172,11 @@ rec_store = Recommendations()
 # Загрузка рекомендаций
 rec_store.load(
     "personal",
-    "recommendations.parquet",
+    os.path.join(base_path, "recommendations.parquet"),
     columns=["user_id", "track_id", "score"],
 )
 rec_store.load(
     "default",
-    "top_recs.parquet",
+    os.path.join(base_path, "top_recs.parquet"),
     columns=["track_id", "rank"],
 )
